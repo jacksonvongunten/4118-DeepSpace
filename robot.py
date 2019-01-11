@@ -7,6 +7,8 @@ import ctre
 class Robot(wpilib.TimedRobot):
 
 	def robotInit(self):
+		NetworkTables.initialize(server="10.41.18.2")
+
 		self.lf_motor = ctre.WPI_VictorSPX(0)
 		self.rf_motor = ctre.WPI_VictorSPX(1)
 		self.lb_motor = ctre.WPI_VictorSPX(2)
@@ -17,19 +19,16 @@ class Robot(wpilib.TimedRobot):
 
 		self.drive = wpilib.drive.DifferentialDrive(self.lf_motor, self.rf_motor)
 
-		NetworkTables.initialize(server="10.41.18.2")
 		self.dash = NetworkTables.getTable("dash")
 
-		self.auto_poster = [limelight.Limelight("tx"), limelight.Limelight("ty")]
+		self.lime = limelight.Limelight()
 	
 	def update(self):
-		for i in self.auto_poster:
-			i.execute()
+		self.lime.execute()
 
-	def limelight(self):
+	def align(self):
 		tx = self.dash.getNumber("tx", 0.0)
-		ty = self.dash.getNumber("ty", 0.0)
-		self.drive.arcadeDrive(ty, tx)
+		self.drive.arcadeDrive(0.7, tx)
 	
 	def autonomousInit(self):
 		self.update()
