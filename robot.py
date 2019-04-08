@@ -42,10 +42,8 @@ class Robot(wpilib.TimedRobot):
 
 		self.limit = wpilib.DigitalInput(0)
 
-		self.level2 = elevatorPID.elevatorPID(self.elevator, 340000, 2)
-		self.level3 = elevatorPID.elevatorPID(self.elevator, 670000, 8)
-
-		self.ultrasonic = wpilib.AnalogInput(0)
+		self.level2 = elevatorPID.elevatorPID(self.elevator, 300000, 1.2)
+		self.level3 = elevatorPID.elevatorPID(self.elevator, 600000, 2.3)
 
 	def toggle(self):
 		if self.controller.getAButtonPressed():
@@ -59,7 +57,7 @@ class Robot(wpilib.TimedRobot):
 				self.led = 0b0
 
 	def fire(self):
-		if (self.controller.getXButton()) and (self.ultrasonic.getVoltage() < 0.3):
+		if (self.controller.getXButton()):
 			self.piston.set(1)
 		else:
 			self.piston.set(2)
@@ -84,24 +82,33 @@ class Robot(wpilib.TimedRobot):
 	def autonomousInit(self):
 		self.drive.curvatureDrive(0.0, 0.0, False)
 		self.lime_table.putNumber("camMode", 1)
-	
+
 	def autonomousPeriodic(self):
 
-		forward = -self.controller.getRawAxis(1)
-		turn = self.controller.getRawAxis(4)
+		if (not self.controller.getBumper(wpilib.interfaces.GenericHID.Hand.kLeft)):
+			forward = -self.controller.getRawAxis(1)
+			turn = 0.7*self.controller.getRawAxis(4)
 
-		self.drive.curvatureDrive(forward, turn, False)		
-		self.elevate()
-		self.toggle()
-		self.fire()
+			self.drive.curvatureDrive(forward, turn, False)		
+			self.elevate()
+			self.toggle()
+			self.fire()
 
-		if (not self.limit.get()):
-			self.elevator.setQuadraturePosition(0)
+			if (not self.limit.get()):
+				self.elevator.setQuadraturePosition(0)
+
+			if (self.controller.getBButton()):
+				self.level2.execute()
+			
+			if (self.controller.getYButton()):
+				self.level3.execute()
 		
-		self.dash.putNumber("encoder", self.elevator.getQuadraturePosition())
+			self.dash.putNumber("encoder", self.elevator.getQuadraturePosition())
 
-		if self.controller.getBumper(wpilib.interfaces.GenericHID.Hand.kRight):
-			self.level2.execute()
+			if self.controller.getBumper(wpilib.interfaces.GenericHID.Hand.kRight):
+				self.level2.execute()
+		else:
+			self.seek()
 	
 	def teleopInit(self):
 		self.drive.curvatureDrive(0.0, 0.0, False)
@@ -110,8 +117,8 @@ class Robot(wpilib.TimedRobot):
 	def teleopPeriodic(self):
 
 		if (not self.controller.getBumper(wpilib.interfaces.GenericHID.Hand.kLeft)):
-			forward = -self.controller.getRawAxis(1)
-			turn = 0.7*self.controller.getRawAxis(4)
+			forward = 0.5*-self.controller.getRawAxis(1)
+			turn = 0.5*self.controller.getRawAxis(4)
 
 			self.drive.curvatureDrive(forward, turn, False)		
 			self.elevate()
